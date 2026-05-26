@@ -1,11 +1,129 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>App Unregistered</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background-color: #f8f9fa;
+      color: #333;
+      text-align: center;
+      padding: 20px;
+      margin: 0;
+    }
+    h1 {
+      color: #dc3545;
+      margin-bottom: 10px;
+    }
+    p {
+      color: #555;
+    }
+    .log-container {
+      margin-top: 20px;
+      background: #e9ecef;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 0.9em;
+      text-align: left;
+      width: 100%;
+      max-width: 500px;
+      overflow-y: auto;
+      max-height: 300px;
+      border: 1px solid #ced4da;
+    }
+    .log-entry {
+      margin-bottom: 5px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #dee2e6;
+    }
+    .log-entry:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    .success {
+      color: #198754;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-    
+  <h1>Application Offline</h1>
+  <p>This application has been shut down. We are currently clearing your local device data.</p>
+  
+  <div class="log-container" id="logBox">
+    <div class="log-entry">Initializing cleanup protocol...</div>
+  </div>
+
+  <script>
+    function log(msg) {
+      const logBox = document.getElementById('logBox');
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.innerHTML = msg;
+      logBox.appendChild(entry);
+      console.log(msg);
+    }
+
+    async function cleanup() {
+      // 1. Unregister Service Workers
+      if ('serviceWorker' in navigator) {
+        try {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          if (registrations.length === 0) {
+            log('No active Service Workers found.');
+          } else {
+            for (const registration of registrations) {
+              const success = await registration.unregister();
+              log(`Service Worker unregistered: <span class="success">${success}</span>`);
+            }
+          }
+        } catch (err) {
+          log(`Service Worker Error: ${err.message}`);
+        }
+      } else {
+        log('Service Workers not supported in this browser.');
+      }
+
+      // 2. Clear Caches
+      if ('caches' in window) {
+        try {
+          const keys = await caches.keys();
+          if (keys.length === 0) {
+            log('No cached data found.');
+          } else {
+            for (const key of keys) {
+              await caches.delete(key);
+              log(`Deleted cache storage: <span class="success">${key}</span>`);
+            }
+          }
+        } catch (err) {
+          log(`Cache Error: ${err.message}`);
+        }
+      }
+
+      // 3. Clear Local and Session Storage
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+        log('Local & Session storage <span class="success">cleared</span>.');
+      } catch (err) {
+        log(`Storage Error: ${err.message}`);
+      }
+
+      log('<br><span class="success">Cleanup complete!</span> The application data has been removed from your device.');
+    }
+
+    // Run cleanup on load
+    window.addEventListener('load', cleanup);
+  </script>
 </body>
 </html>
